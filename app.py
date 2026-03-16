@@ -18,7 +18,13 @@ st.markdown("""
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
     GMAIL_PASS = st.secrets["GMAIL_APP_PASSWORD"]
-    RODS_EMAIL = "varodsalm@gmail.com"
+    
+    # 1. The email account that generated the App Password (used to log in)
+    GMAIL_ACCOUNT = "ezblender089@gmail.com"
+    
+    # 2. The inbox where you actually want to read the leads!
+    RECEIVE_LEADS_AT = "varodsalm@gmail.com" 
+    
 except KeyError:
     st.error("⚠️ Setup incomplete: Please add GROQ_API_KEY and GMAIL_APP_PASSWORD to Streamlit Secrets.")
     st.stop()
@@ -34,12 +40,12 @@ def send_transcript_to_rod(chat_history, lead_email="Unknown (Abandoned Chat)", 
             
     msg = MIMEText(msg_body)
     msg['Subject'] = subject
-    msg['From'] = RODS_EMAIL
-    msg['To'] = RODS_EMAIL
+    msg['From'] = GMAIL_ACCOUNT
+    msg['To'] = RECEIVE_LEADS_AT
     
     try:
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.login(RODS_EMAIL, GMAIL_PASS)
+        server.login(GMAIL_ACCOUNT, GMAIL_PASS)
         server.send_message(msg)
         server.quit()
         return True
@@ -97,7 +103,8 @@ if prompt := st.chat_input("Ask me about Rod's background..."):
 
     # --- MAGIC TRIGGER 2: Silent Abandoned Chat Save ---
     # If the conversation reaches 4 back-and-forth messages, save a backup just in case they hang up!
-    if len(st.session_state.messages) == 8 and not st.session_state.mid_chat_saved:
+    # (Checking for length 9 means roughly 4 user messages + 4 AI messages + 1 system prompt)
+    if len(st.session_state.messages) == 9 and not st.session_state.mid_chat_saved:
         send_transcript_to_rod(st.session_state.messages, subject="👀 Chat In Progress (Abandoned Chat Backup)")
         st.session_state.mid_chat_saved = True
 
